@@ -1,0 +1,32 @@
+<html lang='en'>
+  <head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class='column glass'>
+      <img src="images/logo.png" class="icon-img" style="width: 30%; margin-bottom: 2rem">
+      <div class='row'>
+        <div class="switch-container" id="themeToggle">
+          <img src="images/switch-off.png" class="switch-off">
+        </div>
+        <div class='column sliders-column'>
+          <div class='column'>
+            <img src="images/brightness.png" class="icon-img" style="width: 10%">
+            <input name="brightnessRange" type='range' id='brightnessRange' min='100' max='1023' value='500'>
+          </div>
+          <div class='column'>
+            <img src="images/rgb.png" class="icon-img" style="width: 10%">
+            <input name="colorRange" type='range' id='colorRange' min='0' max='1023' value='250'>
+          </div>
+        </div>
+      </div>
+      <div id='colorDisplay' class='colorDisplay'></div>
+      <button class='modes-btn'>Modes</button>
+      <button class='modes-btn'>Extra modes</button>
+    </div>
+  </body>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.js' type='text/javascript'></script>
+</html>
+   
