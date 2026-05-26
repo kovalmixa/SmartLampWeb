@@ -6,27 +6,42 @@
   </head>
   <body>
     <div class='column glass'>
-      <img src="images/logo.png" class="icon-img" style="width: 30%; margin-bottom: 2rem">
+      <img src="images/logo.png" style="width: 30%; margin-bottom: 2rem">
       <div class='row'>
-        <div class="switch-container" id="themeToggle">
+        <div class="switch-container">
           <img src="images/switch-off.png" class="switch-off">
         </div>
         <div class='column sliders-column'>
           <div class='column'>
-            <img src="images/brightness.png" class="icon-img" style="width: 10%">
-            <input name="brightnessRange" type='range' id='brightnessRange' min='100' max='1023' value='500'>
+            <img src="images/brightness.png" style="width: 10%">
+            <input class="brightness-input" type='range' id='brightness-range' min='100' max='1023' value='500'>
           </div>
           <div class='column'>
-            <img src="images/rgb.png" class="icon-img" style="width: 10%">
-            <input name="colorRange" type='range' id='colorRange' min='0' max='1023' value='250'>
+            <img src="images/rgb.png" style="width: 10%;">
+            <input class="color-input" type='range' id='color-range' min='0' max='1023' value='250'>
           </div>
         </div>
       </div>
-      <div id='colorDisplay' class='colorDisplay'></div>
-      <button class='modes-btn'>Modes</button>
-      <button class='modes-btn'>Extra modes</button>
+      <div class="menu-group">
+        <button onclick="toggleMenu('modes-menu-dropdown')" style="width: 100%">Modes</button>
+        <div class="dropdown-wrapper" id="modes-menu-dropdown">
+          <ul class="sub-menu">
+            <li><a href="#">Подкнопка 1</a></li>
+            <li><a href="#">Подкнопка 2</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="menu-group">
+        <button onclick="toggleMenu('extra-menu-dropdown')" style="width: 100%">Extra modes</button>
+        <div class="dropdown-wrapper" id="extra-menu-dropdown">
+          <ul class="sub-menu">
+            <li><a href="#">Подкнопка 1</a></li>
+            <li><a href="#">Подкнопка 2</a></li>
+          </ul>
+        </div>
+      </div>
     </div>
   </body>
   <script src='https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.js' type='text/javascript'></script>
+<script src="script.js" ></script>
 </html>
-   
