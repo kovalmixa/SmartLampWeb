@@ -156,13 +156,13 @@ input[type="range"]::-moz-range-thumb:active {
 }
 
 .brightness-input::-webkit-slider-runnable-track {
-    background-image: url('images/brightness.jpg') !important;
+    background-image: url('images/brightness-input.jpg') !important;
     background-size: cover !important;
     background-repeat: no-repeat !important;   
     background-position: center !important;    
 }
 .brightness-input::-moz-range-track {
-    background-image: url('images/brightness.jpg') !important;
+    background-image: url('images/brightness-input.jpg') !important;
     background-size: cover !important;
     background-repeat: no-repeat !important;
     background-position: center !important;
@@ -217,8 +217,26 @@ img:hover,
 
 .sub-menu {
     display: none;
+    padding: 0;
+    margin: 1rem 0 0 0;
+    width: 100%;
 }
 
 .dropdown-wrapper.is-open .sub-menu {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    gap: 0.8rem;
+}
+
+.sub-menu li {
+    list-style: none;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.sub-menu button {
+    width: 80% !important;
+    box-sizing: border-box;
 }

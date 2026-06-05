@@ -9,14 +9,35 @@
 // let sub;
 // let lastMessage = 'null';
 
-//dark mode
-const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-if (isDarkMode) document.body.classList.toggle('dark-theme');
+document.addEventListener('DOMContentLoaded', () => {
+    //dark mode
+    const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (isDarkMode) document.body.classList.toggle('dark-theme');
+
+    //menu buttons setup
+    initModButtons(document.querySelectorAll('#mod-menu-dropdown button'), false);
+    initModButtons(document.querySelectorAll('#extra-menu-dropdown button'), true);
+});
+
+function initModButtons(buttons, isExtra){
+    buttons.forEach((button) => {
+        button.addEventListener('click', (event) => toggleMod(buttonTextToFormat(button), isExtra))
+    });
+}
 
 //drop down menus
 function toggleMenu(containerId) {
     container = document.getElementById(containerId),
     container.classList.toggle('is-open');
+}
+
+function buttonTextToFormat(element){
+    const text = element.textContent();
+    return text === null ? 'Undefined' : text;
+}
+
+function toggleMod(modName, isExtra){
+
 }
 
 // let client = new Paho.MQTT.Client('broker.hivemq.com', 8000, '

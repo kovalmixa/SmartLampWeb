@@ -23,25 +23,27 @@
         </div>
       </div>
       <div class="menu-group">
-        <button onclick="toggleMenu('modes-menu-dropdown')" style="width: 100%">Modes</button>
-        <div class="dropdown-wrapper" id="modes-menu-dropdown">
-          <ul class="sub-menu">
-            <li><a href="#">Подкнопка 1</a></li>
-            <li><a href="#">Подкнопка 2</a></li>
+        <button onclick="toggleMenu('mod-menu-dropdown')" style="width: 100%">Modes</button>
+        <div class="dropdown-wrapper" id="mod-menu-dropdown">
+          <ul class="sub-menu column">
+            <li><button>Perlin noise</button></li>
+            <li><button>Circles</button></li>
+            <li><button>Sinusoid</button></li>
           </ul>
         </div>
       </div>
       <div class="menu-group">
         <button onclick="toggleMenu('extra-menu-dropdown')" style="width: 100%">Extra modes</button>
         <div class="dropdown-wrapper" id="extra-menu-dropdown">
-          <ul class="sub-menu">
-            <li><a href="#">Подкнопка 1</a></li>
-            <li><a href="#">Подкнопка 2</a></li>
+          <ul class="sub-menu column">
+            <li><button>Gradient</button></li>
+            <li><button>Pulse</button></li>
+            <li><button>Rainbow</button></li>
           </ul>
         </div>
       </div>
     </div>
   </body>
   <script src='https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.js' type='text/javascript'></script>
-<script src="script.js" ></script>
+  <script src="script.js" ></script>
 </html>
