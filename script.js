@@ -95,14 +95,14 @@ function initMqttConnection(channel = 0) {
         mqttClient.disconnect();
 
     const clientId = 'lamp_web_' + Math.random().toString(16).substr(2, 8);
-    mqttClient = new Paho.MQTT.Client(mqttBroker, 8000, clientId);
+    mqttClient = new Paho.MQTT.Client(mqttBroker, 8884, clientId);
     mqttClient.onConnectionLost = onConnectionLost;
     mqttClient.onMessageArrived = onMessageArrived;
-
+    
     mqttClient.connect({
         onSuccess: () => mqttClient.subscribe(mqttTopic + channel),
         onFailure: (message) => console.log('MQTT Connection failed: ' + message.errorMessage),
-        useSSL: false
+        useSSL: true
     });
 }
 
