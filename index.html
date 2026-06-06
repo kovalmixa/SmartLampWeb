@@ -16,7 +16,7 @@
           <div class='column'>
             <div class='row'>
               <img src="images/brightness.png" class="no-invert" style="width: 10%">
-              <label id="brightness-label" style="margin-left: auto;">0%</label>
+              <label id="brightness-label" style="margin-left: auto; font-size: 0.8rem;">0%</label>
             </div>
             <input class="brightness-input" type='range' id='brightness-range' min='0' max='255' value='128'>
           </div>
@@ -24,9 +24,9 @@
             <div class='row'>
               <img src="images/rgb.png" class="no-invert" style="width: 10%;">
               <div class='row' style="margin-left: auto;">
-                <label id="red-label" style="color: red; display: inline-block; width: 45px; text-align: right;">0%</label>
-                <label id="green-label" style="color: green; display: inline-block; width: 45px; text-align: right; margin-left: 10px;">0%</label>
-                <label id="blue-label" style="color: blue; display: inline-block; width: 45px; text-align: right; margin-left: 10px;">0%</label>
+                <label id="red-label" style="color: red; font-size: 0.8rem; display: inline-block; width: 20px; text-align: right;">0%</label>
+                <label id="green-label" style="color: green; font-size: 0.8rem; display: inline-block; width: 20px; text-align: right; margin-left: 10px;">0%</label>
+                <label id="blue-label" style="color: blue; font-size: 0.8rem; display: inline-block; width: 20px; text-align: right; margin-left: 10px;">0%</label>
               </div>
             </div>
             <input class="color-input" type='range' id='color-range' min='0' max='1023' value='0'>
@@ -46,7 +46,6 @@
           </ul>
         </div>
       </div>
-
       <div class="menu-group">
         <div class="menu-header-row">
           <button onclick="toggleMenu(this, 'extra-menu-dropdown')" style="flex-grow: 1;">Extra modes</button>

@@ -12,7 +12,7 @@ class LampData{
 
 let mqttClient = null;
 const mqttBroker = 'mqtt-dashboard.com';
-const mqttTopic = '_smartLamp_';
+const mqttTopic = 'smartLamp_';
 
 let lampData = new LampData();
 
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initPortSelector(){
     const portSelect = document.getElementById("server-port");
-    portSelect.addEventListener('change', (event) => changeMqttPort(event.target.value));
+    portSelect.addEventListener('change', (event) => initMqttConnection(event.target.value));
 
     const startPort = 0;
     const endPort = 99;
@@ -74,8 +74,7 @@ function initPortSelector(){
         let option = document.createElement("option");
         option.value = i;
         option.text = i;
-        if (i === defaultPort)
-            option.selected = true;
+        if (i === defaultPort) option.selected = true;
         portSelect.appendChild(option);
     }
 }
@@ -91,20 +90,17 @@ function initModButtons(buttons, isExtra){
     });
 }
 
-function initMqttConnection(port = 8000) {
+function initMqttConnection(channel = 0) {
     if (mqttClient && mqttClient.isConnected())
         mqttClient.disconnect();
 
     const clientId = 'lamp_web_' + Math.random().toString(16).substr(2, 8);
-    mqttClient = new Paho.MQTT.Client(mqttBroker, Number(port), clientId);
+    mqttClient = new Paho.MQTT.Client(mqttBroker, 8000, clientId);
     mqttClient.onConnectionLost = onConnectionLost;
     mqttClient.onMessageArrived = onMessageArrived;
 
     mqttClient.connect({
-        onSuccess: () => {
-            console.log(`Connected to MQTT Broker on port ${port}`);
-            mqttClient.subscribe(mqttTopic);
-        },
+        onSuccess: () => mqttClient.subscribe(mqttTopic + channel),
         onFailure: (message) => console.log('MQTT Connection failed: ' + message.errorMessage),
         useSSL: false
     });
@@ -175,22 +171,17 @@ function sendData(){
     // console.log('Sending data:', payload);
 
     const message = new Paho.MQTT.Message(payload);
-    message.destinationName = mqttTopic;
+    message.destinationName = mqttTopic + document.getElementById("server-port").value;
     message.qos = 1; 
     message.retained = true; 
 
     mqttClient.send(message);
 }
 
-function changeMqttPort(number){
-    console.log(`Changing MQTT port to: ${number}`);
-    const actualPort = 8000 + Number(number); 
-    initMqttConnection(actualPort);
-}
-
 function onMessageArrived(message){
     try {
         // console.log("Message came: ", message);
+        
         const receivedData = JSON.parse(message.payloadString);
         const targetData = {
             power: receivedData.power ?? lampData.power,
