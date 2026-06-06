@@ -1,273 +1,280 @@
-//vars
-// document.addEventListener('DOMContentLoaded', function () {
-// let modeState = false;
-// let pulseState, rainbowState, lightMode;
-// let Rcolor, Gcolor, Bcolor;
-// let state =message += state;;
-// let brightness;
-// let colorVal;
-// let sub;
-// let lastMessage = 'null';
+//#region variables and classes
+
+class LampData{
+    constructor() {
+        this.power = false;
+        this.brightnessVal = 0;
+        this.colorVal = 0;
+        this.mod = null;
+        this.extraMods = new Array();
+    }
+}
+
+let mqttClient = null;
+const mqttBroker = 'mqtt-dashboard.com';
+const mqttTopic = '_smartLamp_';
+
+let lampData = new LampData();
+
+let extraModButtons = new Array();
+let modButton = null;
+//#endregion
+
+//#region init
 
 document.addEventListener('DOMContentLoaded', () => {
-    //dark mode
-    const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (isDarkMode) document.body.classList.toggle('dark-theme');
+    // dark mode
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches)
+        document.body.classList.toggle('dark-theme');
 
-    //menu buttons setup
+    initPortSelector();
+
+    // menu buttons setup
     initModButtons(document.querySelectorAll('#mod-menu-dropdown button'), false);
     initModButtons(document.querySelectorAll('#extra-menu-dropdown button'), true);
+
+    //sliders setup
+    const brightnessSlider = document.getElementById('brightness-range');
+    const updateBrightness = () => {
+        lampData.brightnessVal = brightnessSlider.value;
+        const percent = Math.floor((lampData.brightnessVal / brightnessSlider.max) * 100);
+        document.getElementById('brightness-label').textContent = `${percent}%`;
+    };
+    brightnessSlider.addEventListener('input', () => updateBrightness());
+    brightnessSlider.addEventListener('change', () => sendData());
+
+    const colorSlider = document.getElementById('color-range');
+    const updateColor = () => {
+        lampData.colorVal = colorSlider.value;
+        const rgb = valueToRgb(lampData.colorVal, colorSlider.max, 100);
+        ['red', 'green', 'blue'].forEach((color, i) => {
+            document.getElementById(`${color}-label`).textContent = `${Math.floor(rgb[i])}%`;
+        });
+    };
+    colorSlider.addEventListener('input', () => updateColor());
+    colorSlider.addEventListener('change', () => sendData());
+
+    //init mqtt connection
+    initMqttConnection();
+
+    //setup labels
+    updateBrightness();
+    updateColor();
 });
+
+function initPortSelector(){
+    const portSelect = document.getElementById("server-port");
+    portSelect.addEventListener('change', (event) => changeMqttPort(event.target.value));
+
+    const startPort = 0;
+    const endPort = 99;
+    const defaultPort = 0;
+
+    for (let i = startPort; i <= endPort; i++) {
+        let option = document.createElement("option");
+        option.value = i;
+        option.text = i;
+        if (i === defaultPort)
+            option.selected = true;
+        portSelect.appendChild(option);
+    }
+}
 
 function initModButtons(buttons, isExtra){
     buttons.forEach((button) => {
-        button.addEventListener('click', (event) => toggleMod(buttonTextToFormat(button), isExtra))
+        let modName = button.textContent;
+        modName.replace(" ", "_").toLowerCase(); 
+        button.dataset.isExtra = isExtra;
+        button.dataset.modName = modName;
+        button.addEventListener('click', () => toggleMod(button))
+        if (isExtra) extraModButtons.push(button);
     });
 }
 
-//drop down menus
-function toggleMenu(containerId) {
+function initMqttConnection(port = 8000) {
+    if (mqttClient && mqttClient.isConnected())
+        mqttClient.disconnect();
+
+    const clientId = 'lamp_web_' + Math.random().toString(16).substr(2, 8);
+    mqttClient = new Paho.MQTT.Client(mqttBroker, Number(port), clientId);
+    mqttClient.onConnectionLost = onConnectionLost;
+    mqttClient.onMessageArrived = onMessageArrived;
+
+    mqttClient.connect({
+        onSuccess: () => {
+            console.log(`Connected to MQTT Broker on port ${port}`);
+            mqttClient.subscribe(mqttTopic);
+        },
+        onFailure: (message) => console.log('MQTT Connection failed: ' + message.errorMessage),
+        useSSL: false
+    });
+}
+
+//#endregion
+
+//#region interaction
+
+function toggleMenu(button, containerId) {
     container = document.getElementById(containerId),
     container.classList.toggle('is-open');
+    button.classList.toggle('active-button');
 }
 
-function buttonTextToFormat(element){
-    const text = element.textContent();
-    return text === null ? 'Undefined' : text;
+function clearMods(isExtra, isSending){
+    if (isExtra){
+        extraModButtons.forEach(button => button.classList.remove('active-button'));
+        lampData.extraMods.length = 0; 
+    }
+    else{
+        if (modButton === null) return;
+        modButton.classList.remove('active-button');
+        modButton = null;
+        lampData.mod = null;
+    }
+    if (isSending) sendData();
 }
 
-function toggleMod(modName, isExtra){
-
+function toggleMod(button){
+    const modName = button.dataset.modName;
+    if (button.dataset.isExtra === 'true'){
+        button.classList.toggle('active-button');
+        if (lampData.extraMods.includes(modName))
+            lampData.extraMods = lampData.extraMods.filter(item => item !== modName); 
+        else lampData.extraMods.push(modName);
+    }
+    else{
+        let isAlreadyActive = modButton === button;
+        clearMods(false, false);
+        if (!isAlreadyActive){
+            button.classList.toggle('active-button');
+            modButton = button;
+            lampData.mod = modName;
+        } 
+    }
+    sendData();
 }
 
-// let client = new Paho.MQTT.Client('broker.hivemq.com', 8000, '
-//   message += mqtt_username;
-// _web');
-// client.onConnectionLost = onConnectionLost;
-// client.onConnectionLost = onConnectionLost;
-// client.onMessageArrived = onMessageArrived;
+function toggleSwitch(switchImage){
+    lampData.power = !lampData.power;
+    switchImage.classList.toggle('no-invert');
+    switchImage.classList.toggle('switch-on');
+    sendData();
+}
 
-// client.connect({ onSuccess: onConnect });
-//     function onConnect() {
-//     console.log('onConnect');
-//     client.subscribe(sub);
-// }
+//#endregion
 
-// const onOff = document.getElementById('onOff');
-// onOff.addEventListener('mouseover', function(){ mOver(this, state); });
-// onOff.addEventListener('mouseout', function(){ mOut(this, state); });
-// const modes = document.getElementById('modes');
-// modes.addEventListener('mouseover', function(){ mOver(this); });
-// modes.addEventListener('mouseout', function(){ mOut(this); });
-// const mode1 = document.createElement('button');
-// const mode2 = document.createElement('button');
-// const mode3 = document.createElement('button');
-// const mode4 = document.createElement('button');
-// modeInit(mode1, 'gradient', 'Gradient');
-// modeInit(mode2, 'perlin_noise', 'Perlin noise');
-// modeInit(mode3, 'circles', 'Circles');
-// modeInit(mode4, 'sinusoid', 'Sinusoid');
-// let modeArray = [mode1, mode2, mode3, mode4];
-// mode1.addEventListener('click', function(){ chooseMode(this, 1); });
-// mode2.addEventListener('click', function(){ chooseMode(this, 2); });
-// mode3.addEventListener('click', function(){ chooseMode(this, 3); });
-// mode4.addEventListener('click', function(){ chooseMode(this, 4); });
-// const brightnessPulse = document.getElementById('brightnessPulse');
-// brightnessPulse.style.marginLeft =  '10px';
-// brightnessPulse.style.width = (brightnessPulse.offsetWidth / 2) + 'px';
-// brightnessPulse.style.height = (brightnessPulse.offsetHeight / 2) + 'px';
-// brightnessPulse.addEventListener('mouseover', function(){ mOver(this, pulseState); });
-// brightnessPulse.addEventListener('mouseout', function(){ mOut(this, pulseState); });
-// const rainbow = document.getElementById('rainbow');
-// rainbow.style.width = (rainbow.offsetWidth / 2) + 'px';
-// rainbow.style.height = (rainbow.offsetHeight / 2) + 'px';
-// rainbow.addEventListener('mouseover', function(){ mOver(this, rainbowState); });
-// rainbow.addEventListener('mouseout', function(){ mOut(this, rainbowState); });
-// document.getElementById('colorRangeText').style.marginLeft = onOff.offsetWidth + 'px';
-// rainbow.style.marginLeft = '50px';
-// const brightnessRange = document.getElementById('brightnessRange');
-// const colorRange = document.getElementById('colorRange');
-// brightnessRange.value = brightness;
-// colorRange.value = colorVal;
-// function setButtonColor(obj, state){
-// if(state){
-// obj.style.backgroundColor = 'green';
-// obj.style.borderColor = 'green';
-// } else {
-// obj.style.backgroundColor = 'rgb(0, 71, 179)';
-// obj.style.borderColor = 'rgb(0, 71, 179)';}}
-// function mOver(obj, state = 0) {
-// if(state){
-// obj.style.backgroundColor = 'green';
-// obj.style.borderColor = 'green';
-// } else {
-// obj.style.backgroundColor = 'rgb(0, 71, 179)';
-// obj.style.borderColor = 'rgb(0, 71, 179)';}}
-// function mOut(obj, state = 0) {
-// if(state){
-// obj.style.backgroundColor = 'rgb(0, 163, 8)';
-// obj.style.borderColor = 'rgb(0, 163, 8)';
-// } else {
-// obj.style.backgroundColor = 'rgb(0, 102, 255)';
-// obj.style.borderColor = 'rgb(0, 102, 255)';}}
-// function rgbColors(colorVal) {
-// let colorVal2 = colorVal / (1023 / (3 * Math.PI / 2));
-// if(colorVal2 >= Math.PI / 2) Rcolor = Math.sin(colorVal2 + Math.PI) * 255;
-// else Rcolor = Math.sin(colorVal2 + (Math.PI / 2)) * 255;
-// if(Rcolor < 0) Rcolor = 0;
-// Gcolor = Math.sin(colorVal2) * 255;
-// if(Gcolor < 0) Gcolor = 0;
-// Bcolor = Math.sin(colorVal2 + 3 * Math.PI / 2) * 255;
-// if(Bcolor < 0) Bcolor = 0;
-// colorDisplay.style.backgroundColor = `rgb(${Rcolor},${Gcolor},${Bcolor})`;}
-// rgbColors(colorVal);
-// onOff.addEventListener('click', function() {
-// if(state == 1) state = 0;
-// else state = 1;
-// onOffColor();
-// sendMessage();});
-// function onOffColor() {
-// if(state == 1) {
-// onOff.textContent = 'On';
-// onOff.style.backgroundColor = 'green';
-// onOff.style.borderColor = 'green';
-// } else {
-// onOff.textContent = 'Off';
-// modeArray.forEach(function(element) {
-// element.setAttribute('data-state', 'false');});
-// onOff.style.backgroundColor = 'rgb(0, 102, 255)';
-// onOff.style.borderColor = 'rgb(0, 102, 255)';
-// modeArray.forEach(function(element) {
-// element.style.backgroundColor = 'rgb(0, 102, 255)';
-// element.style.borderColor = 'rgb(0, 102, 255)';});
-// pulseState = 0;
-// brightnessPulse.style.backgroundColor = 'rgb(0, 102, 255)';
-// brightnessPulse.style.borderColor = 'rgb(0, 102, 255)';
-// rainbowState = 0;
-// rainbow.style.backgroundColor = 'rgb(0, 102, 255)';
-// rainbow.style.borderColor = 'rgb(0, 102, 255)';}}
-// brightnessPulse.addEventListener('click', function(){
-// if(state == 1){
-// if(pulseState == 1){
-// pulseState = 0;}
-// else{
-// pulseState = 1;}
-// if(pulseState){
-// brightnessPulse.style.backgroundColor = 'green';
-// brightnessPulse.style.borderColor = 'green';}
-// else{
-// brightnessPulse.style.backgroundColor = 'rgb(0, 102, 255)';
-// brightnessPulse.style.borderColor = 'rgb(0, 102, 255)';}
-// sendMessage();}});
-// brightnessRange.addEventListener('input', function(){
-// pulseState = 0;
-// brightnessPulse.style.backgroundColor = 'rgb(0, 102, 255)';
-// brightnessPulse.style.borderColor = 'rgb(0, 102, 255)';
-// brightnessRange.addEventListener('mouseup', function(){
-// brightness = brightnessRange.value;
-// sendMessage();});
-// brightnessRange.addEventListener('touchend', function(){
-// brightness = brightnessRange.value;
-// sendMessage();});});
-// rainbow.addEventListener('click', function(){
-// if(state == 1){
-// if(rainbowState == 1){
-// rainbowState = 0;}
-// else{
-// rainbowState = 1;}
-// if(rainbowState){
-// rainbow.style.backgroundColor = 'green';
-// rainbow.style.borderColor = 'green';}
-// else{
-// rainbow.style.backgroundColor = 'rgb(0, 102, 255)';
-// rainbow.style.borderColor = 'rgb(0, 102, 255)';}
-// sendMessage();}});
-// colorRange.addEventListener('input', function(){
-// rainbowState = 0;
-// rainbow.style.backgroundColor = 'rgb(0, 102, 255)';
-// rainbow.style.borderColor = 'rgb(0, 102, 255)';
-// rgbColors(colorRange.value);
-// colorRange.addEventListener('mouseup', function(){
-// colorVal = colorRange.value;
-// sendMessage();});
-// colorRange.addEventListener('touchend', function(){
-// colorVal = colorRange.value;
-// sendMessage();});});
-// modes.addEventListener('click', function(){
-// if(!modeState){
-// modeState = !modeState;
-// document.getElementById('DIV').appendChild(mode1);
-// document.getElementById('DIV').appendChild(mode2);
-// document.getElementById('DIV').appendChild(mode3);
-// document.getElementById('DIV').appendChild(mode4);
-// } else {
-// modeState = !modeState;
-// mode1.remove();
-// mode2.remove();
-// mode3.remove();
-// mode4.remove();}});
-// function modeInit(obj, id, text) {
-// obj.setAttribute('id', id);
-// obj.textContent = text;
-// obj.classList.add('modes');
-// obj.addEventListener('mouseover', function(){
-// mOver(this, this.getAttribute('data-state') === 'true');});
-// obj.addEventListener('mouseout', function(){
-// mOut(this, this.getAttribute('data-state') === 'true');});}
-// function chooseMode(obj, lMode) {
-// if(state) {
-// let currentState = obj.getAttribute('data-state');
-// currentState = currentState === 'true' ? 'false' : 'true';
-// obj.setAttribute('data-state', currentState);
-// if(currentState === 'true') {
-// modeArray.forEach(function(element) {
-// element.style.backgroundColor = 'rgb(0, 102, 255)';
-// element.style.borderColor = 'rgb(0, 102, 255)';});
-// obj.style.backgroundColor = 'green';
-// obj.style.borderColor = 'green';
-// modeArray.forEach(function(element) {
-// if(element !== obj) {
-// element.setAttribute('data-state', 'false');}});
-// lightMode = lMode;
-// } else {
-// obj.style.backgroundColor = 'rgb(0, 102, 255)';
-// obj.style.borderColor = 'rgb(0, 102, 255)';
-// lightMode = 0;}
-// sendMessage();}}
-// function sendMessage() {
-// let variables = lightMode.toString() + state.toString() + pulseState.toString()
-// + rainbowState.toString() + numbers(brightness, 4) + numbers(colorVal, 4);
-// if(lastMessage != variables) {
-// message = new Paho.MQTT.Message(variables);
-// message.destinationName = sub;
-// client.send(message);}
-// lastMessage = variables;}
-// function numbers(value, width) {
-// let numStr = value.toString();
-// let zeros = width - numStr.length;
-// let result = ''; 
-// for (let i = 0; i < zeros; i++) {
-// result += '0';}
-// return result + numStr;}
-// function onConnectionLost(responseObject){
-// if(responseObject != 0){
-// console.log('Connection lost', responseObject.errorMessage);}}
-// function onMessageArrived(message){
-// console.log('Arrived message', message.payloadString);
-// lightMode = parseInt(message.payloadString[0]);
-// state = parseInt(message.payloadString[1]);
-// pulseState = parseInt(message.payloadString[2]);
-// setButtonColor(brightnessPulse, pulseState);
-// rainbowState = parseInt(message.payloadString[3]);
-// setButtonColor(rainbow, rainbowState);
-// brightnessRange.value = parseInt(message.payloadString[4] + message.payloadString[5]
-// + message.payloadString[6] + message.payloadString[7]);
-// brightness = brightnessRange.value;
-// colorRange.value = parseInt(message.payloadString[8] + message.payloadString[9]
-// + message.payloadString[10] + message.payloadString[11]);
-// colorVal = colorRange.value;
-// rgbColors(colorVal);
-// if(state == 0) lightMode = 0;
-// onOffColor();
-// lastMessage = lightMode.toString() + state.toString() + pulseState.toString()
-// + rainbowState.toString() + numbers(brightness, 4) + numbers(colorVal, 4);}});
+//#region mqqt
+
+function sendData(){
+    if (!mqttClient || !mqttClient.isConnected()) {
+        console.warn('MQTT client is not connected. Data not sent.');
+        return;
+    }
+    
+    const payload = JSON.stringify(lampData);
+    // console.log('Sending data:', payload);
+
+    const message = new Paho.MQTT.Message(payload);
+    message.destinationName = mqttTopic;
+    message.qos = 1; 
+    message.retained = true; 
+
+    mqttClient.send(message);
+}
+
+function changeMqttPort(number){
+    console.log(`Changing MQTT port to: ${number}`);
+    const actualPort = 8000 + Number(number); 
+    initMqttConnection(actualPort);
+}
+
+function onMessageArrived(message){
+    try {
+        // console.log("Message came: ", message);
+        const receivedData = JSON.parse(message.payloadString);
+        const targetData = {
+            power: receivedData.power ?? lampData.power,
+            brightnessVal: Number(receivedData.brightnessVal ?? lampData.brightnessVal),
+            colorVal: Number(receivedData.colorVal ?? lampData.colorVal),
+            mod: receivedData.mod ?? lampData.mod,
+            extraMods: receivedData.extraMods ?? []
+        };
+
+        if (JSON.stringify(lampData) === JSON.stringify(targetData)) return; 
+        lampData.power = targetData.power;
+        lampData.brightnessVal = targetData.brightnessVal;
+        lampData.colorVal = targetData.colorVal;
+        lampData.mod = targetData.mod;
+        lampData.extraMods = targetData.extraMods;
+
+        updateUI();
+
+    } catch (e) {
+        console.error('Error parsing MQTT JSON payload.', e);
+    }
+}
+
+function updateUI() {
+    // console.log('Updating: ', JSON.stringify(lampData));
+
+    const brightnessSlider = document.getElementById('brightness-range');
+    brightnessSlider.value = lampData.brightnessVal;
+    const percent = Math.floor((lampData.brightnessVal / brightnessSlider.max) * 100);
+    document.getElementById('brightness-label').textContent = `${percent}%`;
+
+    const colorSlider = document.getElementById('color-range');
+    colorSlider.value = lampData.colorVal;
+    const rgb = valueToRgb(lampData.colorVal, colorSlider.max, 100);
+    ['red', 'green', 'blue'].forEach((color, i) => {
+        document.getElementById(`${color}-label`).textContent = `${Math.floor(rgb[i])}%`;
+    });
+
+    const switchImg = document.querySelector('.switch-off');
+    if (lampData.power) switchImg.classList.add('no-invert', 'switch-on');
+    else switchImg.classList.remove('no-invert', 'switch-on');
+
+    clearMods(false, false);
+    if (lampData.mod) {
+        const activeModBtn = document.querySelector(`button[data-mod-name="${lampData.mod}"]`);
+        if (activeModBtn) {
+            activeModBtn.classList.add('active-button');
+            modButton = activeModBtn;
+        }
+    }
+
+    const tempExtraMods = [...lampData.extraMods]; 
+    clearMods(true, false);
+    lampData.extraMods = tempExtraMods;
+    lampData.extraMods.forEach(mod => {
+        const extraBtn = document.querySelector(`button[data-mod-name="${mod}"]`);
+        if (extraBtn) extraBtn.classList.add('active-button');
+    });
+}
+
+function onConnectionLost(responseObject){
+    if (responseObject.errorCode !== 0) {
+        console.log('Connection lost:', responseObject.errorMessage);
+        setTimeout(() => {
+            console.log('Attempting to reconnect...');
+            if (mqttClient) mqttClient.connect({ onSuccess: () => mqttClient.subscribe(mqttTopic) });
+        }, 5000);
+    }
+}
+
+//#endregion
+
+//#region extras
+
+const clamp = (num, min, max) => Math.max(min, Math.min(num, max));
+
+function valueToRgb(colorRangeVal, maxRangeVal, maxVal) {
+    const colorValP = colorRangeVal / (maxRangeVal / (3 * Math.PI / 2));
+    let rColor = clamp((colorValP >= Math.PI / 2 
+    ? Math.sin(colorValP + Math.PI) * maxVal 
+    : Math.sin(colorValP + (Math.PI / 2)) * maxVal), 0 , maxVal);
+    let gColor = clamp(Math.sin(colorValP) * maxVal, 0 , maxVal);
+    let bColor = clamp(Math.sin(colorValP + 3 * Math.PI / 2) * maxVal, 0 , maxVal);
+    return [rColor, gColor, bColor];
+}
+
+//#endregion

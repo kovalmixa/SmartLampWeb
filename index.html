@@ -1,7 +1,8 @@
 <html lang='en'>
-  <head>
+<head>
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <meta name="color-scheme" content="light dark">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
@@ -9,21 +10,34 @@
       <img src="images/logo.png" style="width: 30%; margin-bottom: 2rem">
       <div class='row'>
         <div class="switch-container">
-          <img src="images/switch-off.png" class="switch-off">
+          <img src="images/switch-off.png" class="switch-off" onclick="toggleSwitch(this)">
         </div>
         <div class='column sliders-column'>
           <div class='column'>
-            <img src="images/brightness.png" class="no-invert" style="width: 10%">
-            <input class="brightness-input" type='range' id='brightness-range' min='100' max='1023' value='500'>
+            <div class='row'>
+              <img src="images/brightness.png" class="no-invert" style="width: 10%">
+              <label id="brightness-label" style="margin-left: auto;">0%</label>
+            </div>
+            <input class="brightness-input" type='range' id='brightness-range' min='0' max='255' value='128'>
           </div>
           <div class='column'>
-            <img src="images/rgb.png" class="no-invert" style="width: 10%;">
-            <input class="color-input" type='range' id='color-range' min='0' max='1023' value='250'>
+            <div class='row'>
+              <img src="images/rgb.png" class="no-invert" style="width: 10%;">
+              <div class='row' style="margin-left: auto;">
+                <label id="red-label" style="color: red; display: inline-block; width: 45px; text-align: right;">0%</label>
+                <label id="green-label" style="color: green; display: inline-block; width: 45px; text-align: right; margin-left: 10px;">0%</label>
+                <label id="blue-label" style="color: blue; display: inline-block; width: 45px; text-align: right; margin-left: 10px;">0%</label>
+              </div>
+            </div>
+            <input class="color-input" type='range' id='color-range' min='0' max='1023' value='0'>
           </div>
         </div>
       </div>
       <div class="menu-group">
-        <button onclick="toggleMenu('mod-menu-dropdown')" style="width: 100%">Modes</button>
+        <div class="menu-header-row">
+          <button onclick="toggleMenu(this, 'mod-menu-dropdown')" style="flex-grow: 1;">Modes</button>
+          <button class="clear-btn" onclick="clearMods(false, true)">&times;</button>
+        </div>
         <div class="dropdown-wrapper" id="mod-menu-dropdown">
           <ul class="sub-menu column">
             <li><button>Perlin noise</button></li>
@@ -32,8 +46,12 @@
           </ul>
         </div>
       </div>
+
       <div class="menu-group">
-        <button onclick="toggleMenu('extra-menu-dropdown')" style="width: 100%">Extra modes</button>
+        <div class="menu-header-row">
+          <button onclick="toggleMenu(this, 'extra-menu-dropdown')" style="flex-grow: 1;">Extra modes</button>
+          <button class="clear-btn" onclick="clearMods(true, true)">&times;</button>
+        </div>
         <div class="dropdown-wrapper" id="extra-menu-dropdown">
           <ul class="sub-menu column">
             <li><button>Gradient</button></li>
@@ -41,6 +59,10 @@
             <li><button>Rainbow</button></li>
           </ul>
         </div>
+      </div>
+      <div class="row" style="justify-content: center; margin: 0.5rem 0;">
+        <strong>Server port</strong>
+        <select class="port-select" id="server-port"> </select>
       </div>
     </div>
   </body>
