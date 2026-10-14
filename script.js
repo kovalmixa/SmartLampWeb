@@ -11,13 +11,15 @@ class LampData{
 }
 
 let mqttClient = null;
-const mqttBroker = 'mqtt-dashboard.com';
+// const mqttBroker = 'mqtt-dashboard.com';
+const mqttBroker = '34.1.164.65';
 const mqttTopic = 'smartLamp_';
 
 let lampData = new LampData();
 
 let extraModButtons = new Array();
 let modButton = null;
+
 //#endregion
 
 //#region init
@@ -102,7 +104,7 @@ function initMqttConnection(channel = 0) {
     mqttClient.connect({
         onSuccess: () => mqttClient.subscribe(mqttTopic + channel),
         onFailure: (message) => console.log('MQTT Connection failed: ' + message.errorMessage),
-        useSSL: true
+        useSSL: false
     });
 }
 
