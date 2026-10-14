@@ -12,7 +12,7 @@ class LampData{
 
 let mqttClient = null;
 // const mqttBroker = 'mqtt-dashboard.com';
-const mqttBroker = '34.1.164.65';
+const mqttBroker = 'smartlampweb.duckdns.org';
 const mqttTopic = 'smartLamp_';
 
 let lampData = new LampData();
@@ -104,7 +104,7 @@ function initMqttConnection(channel = 0) {
     mqttClient.connect({
         onSuccess: () => mqttClient.subscribe(mqttTopic + channel),
         onFailure: (message) => console.log('MQTT Connection failed: ' + message.errorMessage),
-        useSSL: false
+        useSSL: true
     });
 }
 
