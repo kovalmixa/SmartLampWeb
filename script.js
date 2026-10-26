@@ -97,13 +97,15 @@ function initMqttConnection(channel = 0) {
         mqttClient.disconnect();
 
     const clientId = 'lamp_web_' + Math.random().toString(16).substr(2, 8);
-    mqttClient = new Paho.MQTT.Client(mqttBroker, 8884, clientId);
+    mqttClient = new Paho.MQTT.Client(mqttBroker, 443, clientId);
     mqttClient.onConnectionLost = onConnectionLost;
     mqttClient.onMessageArrived = onMessageArrived;
     
     mqttClient.connect({
         onSuccess: () => mqttClient.subscribe(mqttTopic + channel),
         onFailure: (message) => console.log('MQTT Connection failed: ' + message.errorMessage),
+        userName: 'default_user',
+        password: 'vsqkz60ISY2NGT5AnQdttqwpzSDQ5n4g',
         useSSL: true
     });
 }
@@ -249,11 +251,18 @@ function onConnectionLost(responseObject){
         console.log('Connection lost:', responseObject.errorMessage);
         setTimeout(() => {
             console.log('Attempting to reconnect...');
-            if (mqttClient) mqttClient.connect({ onSuccess: () => mqttClient.subscribe(mqttTopic) });
+            if (mqttClient) {
+                const currentChannel = document.getElementById("server-port").value || 0;
+                mqttClient.connect({ 
+                    onSuccess: () => mqttClient.subscribe(mqttTopic + currentChannel),
+                    useSSL: true,
+                    userName: 'webusername',
+                    password: 'webpassword'
+                });
+            }
         }, 5000);
     }
 }
-
 //#endregion
 
 //#region extras
@@ -261,12 +270,10 @@ function onConnectionLost(responseObject){
 const clamp = (num, min, max) => Math.max(min, Math.min(num, max));
 
 function valueToRgb(colorRangeVal, maxRangeVal, maxVal) {
-    const colorValP = colorRangeVal / (maxRangeVal / (3 * Math.PI / 2));
-    let rColor = clamp((colorValP >= Math.PI / 2 
-    ? Math.sin(colorValP + Math.PI) * maxVal 
-    : Math.sin(colorValP + (Math.PI / 2)) * maxVal), 0 , maxVal);
-    let gColor = clamp(Math.sin(colorValP) * maxVal, 0 , maxVal);
-    let bColor = clamp(Math.sin(colorValP + 3 * Math.PI / 2) * maxVal, 0 , maxVal);
+    let functionValue = (colorRangeVal / maxRangeVal) % 1 * 6;
+    let rColor = clamp(Math.abs(functionValue - 3) - 1, 0, 1) * maxVal;
+    let gColor = clamp(-Math.abs(functionValue - 2) + 2, 0, 1) * maxVal;
+    let bColor = clamp(-Math.abs(functionValue - 4) + 2, 0, 1) * maxVal;
     return [rColor, gColor, bColor];
 }
 
